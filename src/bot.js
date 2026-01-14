@@ -82,23 +82,43 @@ const watchCommands = () => {
   const prefixPath = path.join(__dirname, 'commands', 'prefix');
   const slashPath = path.join(__dirname, 'commands', 'slash');
 
-  fs.watch(prefixPath, (eventType, filename) => {
+  const prefixWatcher = fs.watch(prefixPath, (eventType, filename) => {
     if (eventType === 'change' && filename.endsWith('.js')) {
-      const filePath = path.join(prefixPath, filename);
-      delete require.cache[require.resolve(filePath)];
-      const command = require(filePath);
-      client.prefixCommands.set(command.data.name, command);
-      console.log(`🔄 Reloaded prefix command: ${command.data.name}`);
+      try {
+        const filePath = path.join(prefixPath, filename);
+        delete require.cache[require.resolve(filePath)];
+        const command = require(filePath);
+        client.prefixCommands.set(command.data.name, command);
+        console.log(`Reloaded prefix command: ${command.data.name}`);
+      } catch (error) {
+        console.error(`Error reloading prefix command: ${error}`);
+      }
     }
   });
 
-  fs.watch(slashPath, (eventType, filename) => {
+  const slashWatcher = fs.watch(slashPath, (eventType, filename) => {
     if (eventType === 'change' && filename.endsWith('.js')) {
-      const filePath = path.join(slashPath, filename);
-      delete require.cache[require.resolve(filePath)];
-      const command = require(filePath);
-      client.slashCommands.set(command.data.name, command);
-      console.log(`🔄 Reloaded slash command: ${command.data.name}`);
+      try {
+        const filePath = path.join(slashPath, filename);
+        delete require.cache[require.resolve(filePath)];
+        const command = require(filePath);
+        client.slashCommands.set(command.data.name, command);
+        console.log(`Reloaded slash command: ${command.data.name}`);
+      } catch (error) {
+        console.error(`Error reloading slash command: ${error}`);
+      }
+    }
+  });
+
+  prefixWatcher.on('error', (error) => {
+    if (error.code !== 'EMFILE') {
+      console.error('Prefix watcher error:', error);
+    }
+  });
+
+  slashWatcher.on('error', (error) => {
+    if (error.code !== 'EMFILE') {
+      console.error('Slash watcher error:', error);
     }
   });
 };
