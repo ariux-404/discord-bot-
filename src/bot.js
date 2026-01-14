@@ -77,50 +77,58 @@ loadPrefixCommands();
 loadSlashCommands();
 loadEvents();
 
-// Dynamic command reloading (watching for file changes)
+// Dynamic command reloading (watching for file changes) - disabled in production
+// to avoid EMFILE errors
 const watchCommands = () => {
+  if (process.env.NODE_ENV === 'production') {
+    console.log('File watching disabled in production');
+    return;
+  }
+
   const prefixPath = path.join(__dirname, 'commands', 'prefix');
   const slashPath = path.join(__dirname, 'commands', 'slash');
 
-  const prefixWatcher = fs.watch(prefixPath, (eventType, filename) => {
-    if (eventType === 'change' && filename.endsWith('.js')) {
-      try {
-        const filePath = path.join(prefixPath, filename);
-        delete require.cache[require.resolve(filePath)];
-        const command = require(filePath);
-        client.prefixCommands.set(command.data.name, command);
-        console.log(`Reloaded prefix command: ${command.data.name}`);
-      } catch (error) {
-        console.error(`Error reloading prefix command: ${error}`);
+  try {
+    const prefixWatcher = fs.watch(prefixPath, { persistent: false }, (eventType, filename) => {
+      if (eventType === 'change' && filename.endsWith('.js')) {
+        try {
+          const filePath = path.join(prefixPath, filename);
+          delete require.cache[require.resolve(filePath)];
+          const command = require(filePath);
+          client.prefixCommands.set(command.data.name, command);
+          console.log(`Reloaded prefix command: ${command.data.name}`);
+        } catch (error) {
+          console.error(`Error reloading prefix command: ${error}`);
+        }
       }
-    }
-  });
+    });
 
-  const slashWatcher = fs.watch(slashPath, (eventType, filename) => {
-    if (eventType === 'change' && filename.endsWith('.js')) {
-      try {
-        const filePath = path.join(slashPath, filename);
-        delete require.cache[require.resolve(filePath)];
-        const command = require(filePath);
-        client.slashCommands.set(command.data.name, command);
-        console.log(`Reloaded slash command: ${command.data.name}`);
-      } catch (error) {
-        console.error(`Error reloading slash command: ${error}`);
+    const slashWatcher = fs.watch(slashPath, { persistent: false }, (eventType, filename) => {
+      if (eventType === 'change' && filename.endsWith('.js')) {
+        try {
+          const filePath = path.join(slashPath, filename);
+          delete require.cache[require.resolve(filePath)];
+          const command = require(filePath);
+          client.slashCommands.set(command.data.name, command);
+          console.log(`Reloaded slash command: ${command.data.name}`);
+        } catch (error) {
+          console.error(`Error reloading slash command: ${error}`);
+        }
       }
-    }
-  });
+    });
 
-  prefixWatcher.on('error', (error) => {
-    if (error.code !== 'EMFILE') {
-      console.error('Prefix watcher error:', error);
-    }
-  });
+    prefixWatcher.on('error', (error) => {
+      console.error('Prefix watcher error:', error.code);
+      prefixWatcher.close();
+    });
 
-  slashWatcher.on('error', (error) => {
-    if (error.code !== 'EMFILE') {
-      console.error('Slash watcher error:', error);
-    }
-  });
+    slashWatcher.on('error', (error) => {
+      console.error('Slash watcher error:', error.code);
+      slashWatcher.close();
+    });
+  } catch (error) {
+    console.error('Error setting up file watchers:', error.code);
+  }
 };
 
 watchCommands();
