@@ -23,6 +23,17 @@ module.exports = {
       }).catch(console.error);
     }
 
+    // Check if message mentions AI
+    if (message.content.toLowerCase().includes('ai')) {
+      try {
+        await message.reply({
+          content: 'Bruh, you talking about AI? 🤖 AI is literally just robots doing your homework for you! Why waste your time when <@1347129007321387068> (nikcreates_) and <@1457331661992759323> (ariu.x) can make those bots do the heavy lifting? Stop procrastinating and hit them up! 💀',
+        });
+      } catch (error) {
+        console.error('Error replying to AI mention:', error);
+      }
+    }
+
     // Check if message starts with prefix
     if (!message.content.startsWith(client.prefix)) return;
 
@@ -38,10 +49,9 @@ module.exports = {
     try {
       await command.execute(message, args, client);
     } catch (error) {
-      console.error(`❌ Error executing prefix command ${commandName}:`, error);
+      console.error(`Error executing prefix command ${commandName}:`, error);
       message.reply({
         content: 'There was an error executing this command.',
-        ephemeral: true,
       }).catch(console.error);
     }
   },

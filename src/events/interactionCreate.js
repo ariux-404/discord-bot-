@@ -220,23 +220,23 @@ module.exports = {
           const ratingRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
               .setCustomId(`review_rating_1_${designerId}_${product}`)
-              .setLabel('1 Star')
+              .setLabel('⭐')
               .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
               .setCustomId(`review_rating_2_${designerId}_${product}`)
-              .setLabel('2 Stars')
+              .setLabel('⭐⭐')
               .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
               .setCustomId(`review_rating_3_${designerId}_${product}`)
-              .setLabel('3 Stars')
+              .setLabel('⭐⭐⭐')
               .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
               .setCustomId(`review_rating_4_${designerId}_${product}`)
-              .setLabel('4 Stars')
+              .setLabel('⭐⭐⭐⭐')
               .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
               .setCustomId(`review_rating_5_${designerId}_${product}`)
-              .setLabel('5 Stars')
+              .setLabel('⭐⭐⭐⭐⭐')
               .setStyle(ButtonStyle.Secondary)
           );
 
@@ -362,7 +362,7 @@ module.exports = {
 
           const designerName = designerId === '1457331661992759323' ? 'ariu.x' : 'nikcreates_';
           const productName = product === 'discord_bot' ? 'Discord Bot' : 'Banner';
-          const starRating = '*'.repeat(rating) + ' stars';
+          const starRating = '⭐'.repeat(rating);
 
           // Create review embed
           const reviewEmbed = new EmbedBuilder()
@@ -392,6 +392,78 @@ module.exports = {
           console.error('Error submitting review:', error);
           await interaction.reply({
             content: 'There was an error submitting your review.',
+            ephemeral: true,
+          });
+        }
+      }
+
+      // Handle giveaway enter button
+      if (interaction.customId === 'giveaway_enter') {
+        try {
+          // Initialize giveaway participants map if not exists
+          if (!client.giveawayParticipants) {
+            client.giveawayParticipants = new Map();
+          }
+
+          const messageId = interaction.message.id;
+          if (!client.giveawayParticipants.has(messageId)) {
+            client.giveawayParticipants.set(messageId, new Set());
+          }
+
+          const participants = client.giveawayParticipants.get(messageId);
+          if (participants.has(interaction.user.id)) {
+            return await interaction.reply({
+              content: 'You are already entered in this giveaway!',
+              ephemeral: true,
+            });
+          }
+
+          participants.add(interaction.user.id);
+          await interaction.reply({
+            content: 'You have entered the giveaway!',
+            ephemeral: true,
+          });
+        } catch (error) {
+          console.error('Error handling giveaway enter:', error);
+          await interaction.reply({
+            content: 'There was an error entering the giveaway.',
+            ephemeral: true,
+          });
+        }
+      }
+
+      // Handle giveaway leave button
+      if (interaction.customId === 'giveaway_leave') {
+        try {
+          if (!client.giveawayParticipants) {
+            client.giveawayParticipants = new Map();
+          }
+
+          const messageId = interaction.message.id;
+          if (!client.giveawayParticipants.has(messageId)) {
+            return await interaction.reply({
+              content: 'You are not in this giveaway.',
+              ephemeral: true,
+            });
+          }
+
+          const participants = client.giveawayParticipants.get(messageId);
+          if (!participants.has(interaction.user.id)) {
+            return await interaction.reply({
+              content: 'You are not in this giveaway.',
+              ephemeral: true,
+            });
+          }
+
+          participants.delete(interaction.user.id);
+          await interaction.reply({
+            content: 'You have left the giveaway.',
+            ephemeral: true,
+          });
+        } catch (error) {
+          console.error('Error handling giveaway leave:', error);
+          await interaction.reply({
+            content: 'There was an error leaving the giveaway.',
             ephemeral: true,
           });
         }
